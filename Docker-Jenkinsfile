@@ -53,7 +53,7 @@ pipeline {
         stage('OWASP Dependency Check') {
             steps {
                 sh '''
-                dependency-check.sh --project "Netflix" --scan . --format "HTML" --out ./dependency-check-report
+                dependency-check --project "Netflix" --scan . --format "HTML" --out ./dependency-check-report
                 '''
             }
         }
