@@ -24,7 +24,7 @@ pipeline {
                     sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
                     -Dsonar.projectKey=Netflix
                     -Dsonar.projectName=Netflix \
-                    -Dsonar.host.url=http://your-sonarqube-server:9000 \
+                    -Dsonar.host.url=http://http://34.224.38.55:9000 \
                     -Dsonar.login=$sonartoken"'''
                     
                 }
