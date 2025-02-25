@@ -6,7 +6,7 @@ pipeline {
     }
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        SONAR_TOKEN = credentials('Sonar-token')  // Proper credentials retrieval
+        SONAR_TOKEN = credentials('sonar-token')  // Proper credentials retrieval
     }
     stages {
         stage('Clean Workspace') {
