@@ -52,9 +52,9 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                sh '''
-                dependency-check --project "Netflix" --scan . --format "HTML" --out ./dependency-check-report
-                '''
+                
+               dependencyCheck additionalArguments: '--scan ./ --format "HTML" --out ./dependency-check-report', odcInstallation: 'DP-Check'
+                
             }
         }
         stage('OWASP FS SCAN') {
