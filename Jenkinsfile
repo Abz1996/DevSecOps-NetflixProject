@@ -8,7 +8,7 @@ pipeline {
         SCANNER_HOME = tool 'sonar-scanner'
     }
     stages {
-        stage('clean workspace') {
+        stage('Clean Workspace') {
             steps {
                 cleanWs()
             }
@@ -18,22 +18,25 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/N4si/DevSecOps-Project.git'
             }
         }
-        stage("Sonarqube Analysis") {
+        stage("SonarQube Analysis") {
             steps {
                 withSonarQubeEnv('sonar-server') {
-                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
-                    -Dsonar.projectKey=Netflix
+                    sh '''
+                    $SCANNER_HOME/bin/sonar-scanner \
                     -Dsonar.projectName=Netflix \
-                    -Dsonar.host.url=http://http://34.224.38.55:9000 \
-                    -Dsonar.login=sonartoken"'''
-                    
+                    -Dsonar.projectKey=Netflix \
+                    -Dsonar.host.url=http://34.224.38.55:9000 \
+                    -Dsonar.login=$SONAR_TOKEN
+                    '''
                 }
             }
         }
-        stage("quality gate") {
+        stage("Quality Gate") {
             steps {
                 script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token'
+                    timeout(time: 2, unit: 'MINUTES') {  // Avoid infinite waiting
+                        waitForQualityGate abortPipeline: true
+                    }
                 }
             }
         }
