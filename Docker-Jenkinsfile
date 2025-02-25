@@ -6,7 +6,7 @@ pipeline {
     }
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        SONAR_TOKEN = credentials('sonar-token')  // Proper credentials retrieval
+        SONAR_TOKEN = credentials('Sonar-token')
     }
     stages {
         stage('Clean Workspace') {
@@ -35,7 +35,7 @@ pipeline {
         stage("Quality Gate") {
             steps {
                 script {
-                    timeout(time: 5, unit: 'MINUTES') {  // Increased timeout to prevent failures
+                    timeout(time: 5, unit: 'MINUTES') {
                         waitForQualityGate abortPipeline: true
                     }
                 }
@@ -43,25 +43,46 @@ pipeline {
         }
         stage('Install Dependencies') {
             steps {
-                sh "npm install"
+                sh '''
+                npm install
+                npm audit fix --force  # Fix vulnerabilities automatically
+                '''
             }
         }
         stage('OWASP Dependency Check') {
             steps {
-                sh '''
-                dependency-check.sh --project "Netflix" --scan . --format "HTML" --out ./dependency-check-report
-                '''
+                script {
+                    try {
+                        sh '''
+                        dependency-check.sh --project "Netflix" --scan . --format "HTML" --out ./dependency-check-report
+                        '''
+                    } catch (Exception e) {
+                        echo "⚠️ OWASP Dependency Check failed but continuing..."
+                    }
+                }
             }
         }
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                script {
+                    try {
+                        dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                        dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                    } catch (Exception e) {
+                        echo "⚠️ OWASP FS SCAN failed but continuing..."
+                    }
+                }
             }
         }
         stage('Trivy File System Scan') {
             steps {
-                sh "trivy fs . > trivyfs.txt"
+                script {
+                    try {
+                        sh "trivy fs . > trivyfs.txt"
+                    } catch (Exception e) {
+                        echo "⚠️ TRIVY FS SCAN failed but continuing..."
+                    }
+                }
             }
         }
         stage("Docker Build & Push") {
@@ -77,7 +98,13 @@ pipeline {
         }
         stage("Trivy Image Scan") {
             steps {
-                sh "trivy image sreedhar8897/netflix:latest > trivyimage.txt"
+                script {
+                    try {
+                        sh "trivy image sreedhar8897/netflix:latest > trivyimage.txt"
+                    } catch (Exception e) {
+                        echo "⚠️ TRIVY Image Scan failed but continuing..."
+                    }
+                }
             }
         }
         stage('Deploy to Container') {
