@@ -50,12 +50,22 @@ pipeline {
             } 
         }
 
+        stage('OWASP Dependency Check') {
+            steps {
+                sh '''
+                dependency-check --project "Netflix" --scan . --format "HTML" --out ./dependency-check-report
+                '''
+            }
+        }
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                script {
+                    dependencyCheck additionalArguments: '--scan ./ --format "HTML" --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                }
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
+
         stage('Trivy File System Scan') {
             steps {
                 sh "trivy fs . > trivyfs.txt"
