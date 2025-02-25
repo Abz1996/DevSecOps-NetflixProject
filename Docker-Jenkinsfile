@@ -1,96 +1,76 @@
-pipeline {
+pipeline{
     agent any
-    tools {
+    tools{
         jdk 'jdk17'
         nodejs 'node16'
     }
     environment {
-        SCANNER_HOME = tool 'sonar-scanner'
-        SONAR_TOKEN = credentials('sonar-token')  // Proper credentials retrieval
+        SCANNER_HOME=tool 'sonar-scanner'
     }
     stages {
-        stage('Clean Workspace') {
-            steps {
+        stage('clean workspace'){
+            steps{
                 cleanWs()
             }
         }
-        stage('Checkout from Git') {
-            steps {
+        stage('Checkout from Git'){
+            steps{
                 git branch: 'main', url: 'https://github.com/uniquesreedhar/DevSecOps-NetflixProject.git'
             }
         }
-        stage("SonarQube Analysis") {
-            steps {
+        stage("Sonarqube Analysis "){
+            steps{
                 withSonarQubeEnv('sonar-server') {
-                    sh '''
-                    $SCANNER_HOME/bin/sonar-scanner \
-                    -Dsonar.projectName=Netflix \
-                    -Dsonar.projectKey=Netflix \
-                    -Dsonar.host.url=http://34.224.38.55:9000 \
-                    -Dsonar.login=$SONAR_TOKEN
-                    '''
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
+                    -Dsonar.projectKey=Netflix '''
                 }
             }
         }
-        stage("Quality Gate") {
-            steps {
-                script {
-                    timeout(time: 5, unit: 'MINUTES') {  // Increased timeout to prevent failures
-                        waitForQualityGate abortPipeline: true
-                    }
-                }
-            }
-        }
-       stage('Install Dependencies') {
+        stage("quality gate"){
            steps {
-               sh '''
-               npm install
-               npm audit fix --force  # Force-fixes vulnerabilities
-               '''
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token' 
+                }
             } 
         }
-
-        stage('OWASP Dependency Check') {
+        stage('Install Dependencies') {
             steps {
-                
-               dependencyCheck additionalArguments: '--scan ./ --format "HTML" --out ./dependency-check-report', odcInstallation: 'DP-Check'
-                
+                sh "npm install"
             }
         }
         stage('OWASP FS SCAN') {
             steps {
-                script {
-                    dependencyCheck additionalArguments: '--scan ./ --format "HTML" --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                }
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
-
-        stage('Trivy File System Scan') {
+        stage('TRIVY FS SCAN') {
             steps {
                 sh "trivy fs . > trivyfs.txt"
             }
         }
-        stage("Docker Build & Push") {
-            steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {   
-                        sh "docker build --build-arg TMDB_V3_API_KEY=0ee38f4938fc77720ee0ffc7a1f46d94 -t netflix ."
-                        sh "docker tag netflix sreedhar8897/netflix:latest"
-                        sh "docker push sreedhar8897/netflix:latest"
+        stage("Docker Build & Push"){
+            steps{
+                script{
+                   withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){   
+                       sh "docker build --build-arg TMDB_V3_API_KEY=0ee38f4938fc77720ee0ffc7a1f46d94 -t netflix ."
+                       sh "docker tag netflix sreedhar8897/netflix:latest "
+                       sh "docker push sreedhar8897/netflix:latest "
                     }
                 }
             }
         }
-        stage("Trivy Image Scan") {
-            steps {
-                sh "trivy image sreedhar8897/netflix:latest > trivyimage.txt"
+        stage("TRIVY"){
+            steps{
+                sh "trivy image sreedhar8897/netflix:latest > trivyimage.txt" 
             }
         }
-        stage('Deploy to Container') {
-            steps {
+        stage('Deploy to container'){
+            steps{
                 sh 'docker run -d --name netflix -p 8081:80 sreedhar8897/netflix:latest'
             }
         }
     }
 }
+
+
