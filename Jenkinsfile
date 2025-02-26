@@ -26,7 +26,7 @@ pipeline {
                     $SCANNER_HOME/bin/sonar-scanner \
                     -Dsonar.projectName=Netflix \
                     -Dsonar.projectKey=Netflix \
-                    -Dsonar.host.url=http://54.197.196.74:9000 \
+                    -Dsonar.host.url=http://52.91.247.27:9000 \
                     -Dsonar.login=$SONAR_TOKEN
                     '''
                 }
