@@ -19,11 +19,16 @@ pipeline{
                 git branch: 'main', url: 'https://github.com/uniquesreedhar/DevSecOps-NetflixProject.git'
             }
         }
-        stage("Sonarqube Analysis "){
-            steps{
+         stage("SonarQube Analysis") {
+            steps {
                 withSonarQubeEnv('sonar-server') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
-                    -Dsonar.projectKey=Netflix '''
+                    sh '''
+                    $SCANNER_HOME/bin/sonar-scanner \
+                    -Dsonar.projectName=Netflix \
+                    -Dsonar.projectKey=Netflix \
+                    -Dsonar.host.url=http://54.227.7.246:9000 \
+                    -Dsonar.login=$SONAR_TOKEN
+                    '''
                 }
             }
         }
